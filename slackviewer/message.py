@@ -98,6 +98,12 @@ class Message(object):
             text = self._generate_blocks_text(self._message["blocks"])
         else:
             text = self._message.get("text", "")
+            if "original" in self._message:
+                orig = self._message["original"]
+                if orig and orig["text"]:
+                    text = orig["text"]
+            if not text or text.strip() == "":
+                print(self._message)
             if not text or text.strip() == "":
                 text = "[ MESSAGE TEXT EMPTY ]"
 

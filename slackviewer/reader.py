@@ -30,7 +30,15 @@ class Reader(object):
         # slack name that is in the url https://<slackname>.slack.com
         self._slack_name = self._get_slack_name()
         # TODO: Make sure this works
-        with io.open(os.path.join(self._PATH, "users.json"), encoding="utf8") as f:
+
+        filename = "users.json"
+        if os.path.exists(os.path.join(self._PATH, filename)):
+          print(f"'{filename}' found.")
+        if os.path.exists(os.path.join(self._PATH, "org_users.json")):
+          filename = "org_users.json"
+          print(f"'{filename}' found.")
+
+        with io.open(os.path.join(self._PATH, filename), encoding="utf8") as f:
             self.__USER_DATA = {u["id"]: User(u) for u in json.load(f)}
             slackbot = {
                 "id": "USLACKBOT",
