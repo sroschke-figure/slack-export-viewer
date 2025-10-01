@@ -3,6 +3,7 @@ import os
 
 import click
 import flask
+from flask import current_app
 
 from slackviewer.app import app
 from slackviewer.config import Config
@@ -11,35 +12,35 @@ from slackviewer.reader import Reader
 
 
 def configure_app(app, config):
-    app.debug = config.debug
-    app.no_sidebar = config.no_sidebar
-    app.no_external_references = config.no_external_references
-    if app.debug:
-        print("WARNING: DEBUG MODE IS ENABLED!")
-    app.config["PROPAGATE_EXCEPTIONS"] = True
+    with app.app_context():
+      app.debug = config.debug
+      app.no_sidebar = config.no_sidebar
+      app.no_external_references = config.no_external_references
+      if app.debug:
+          print("WARNING: DEBUG MODE IS ENABLED!")
+      app.config["PROPAGATE_EXCEPTIONS"] = True
 
-    reader = Reader(config)
+      reader = Reader(config)
 
-    top = flask._app_ctx_stack
-    top.path = reader.archive_path()
-    top.channels = reader.compile_channels(config.channels)
-    top.groups = reader.compile_groups()
-    top.dms = {}
-    top.dm_users = []
-    top.mpims = {}
-    top.mpim_users = []
-    if config.show_dms:
-        top.dms = reader.compile_dm_messages()
-        top.dm_users = reader.compile_dm_users()
-        top.mpims = reader.compile_mpim_messages()
-        top.mpim_users = reader.compile_mpim_users()
+      current_app.path = reader.archive_path()
+      current_app.channels = reader.compile_channels(config.channels)
+      current_app.groups = reader.compile_groups()
+      current_app.dms = {}
+      current_app.dm_users = []
+      current_app.mpims = {}
+      current_app.mpim_users = []
+      if config.show_dms:
+          current_app.dms = reader.compile_dm_messages()
+          current_app.dm_users = reader.compile_dm_users()
+          current_app.mpims = reader.compile_mpim_messages()
+          current_app.mpim_users = reader.compile_mpim_users()
 
-    reader.warn_not_found_to_hide_channels()
+      reader.warn_not_found_to_hide_channels()
 
-    # remove any empty channels & groups. DM's are needed for now
-    # since the application loads the first
-    top.channels = {k: v for k, v in top.channels.items() if v}
-    top.groups = {k: v for k, v in top.groups.items() if v}
+      # remove any empty channels & groups. DM's are needed for now
+      # since the application loads the first
+      current_app.channels = {k: v for k, v in current_app.channels.items() if v}
+      current_app.groups = {k: v for k, v in current_app.groups.items() if v}
 
 
 @click.command()
@@ -126,7 +127,7 @@ def main(**kwargs):
         # This tells freezer about the channel URLs
         @freezer.register_generator
         def channel_name():
-            for channel in flask._app_ctx_stack.channels:
+            for channel in flask.current_app.channels:
                 yield {"name": channel}
 
         freezer.freeze()
